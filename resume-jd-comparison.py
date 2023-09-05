@@ -1,5 +1,5 @@
 import os
-os.system("python -m spacy download en_core_web_sm)
+os.system("python -m spacy download en_core_web_sm")
 import numpy as np
 import pandas as pd
 import PyPDF2, pdfplumber, nlp, re, docx2txt, streamlit as st
