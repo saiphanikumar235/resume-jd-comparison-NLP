@@ -2,6 +2,6 @@ PyPDF2
 pdfplumber
 nlp
 docx2txt
-sklearn
+scikit-learn
 spacy
 pandas
