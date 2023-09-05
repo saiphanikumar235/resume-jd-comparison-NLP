@@ -1,0 +1,7 @@
+PyPDF2
+pdfplumber
+nlp
+docx2txt
+sklearn
+spacy
+pandas
