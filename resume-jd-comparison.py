@@ -1,3 +1,5 @@
+import os
+os.system("pip install sklearn")
 import numpy as np
 import pandas as pd
 import PyPDF2, pdfplumber, nlp, re, docx2txt, streamlit as st
