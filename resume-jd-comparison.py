@@ -28,7 +28,7 @@ def get_email_addresses(string):
 def get_phone_numbers(string):
     r = re.compile(r'(\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4})')
     phone_numbers = r.findall(string)
-    return [re.sub(r'\D', '', num) for num in phone_numbers]
+    return [re.sub(r'\D', '', num) for num in phone_numbers if len(num) in [12, 13, 10]]
 
 
 def extract_name(resume_text):
