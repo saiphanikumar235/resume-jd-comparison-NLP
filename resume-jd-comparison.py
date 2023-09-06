@@ -1,10 +1,11 @@
 import numpy as np
 import pandas as pd
-import PyPDF2, pdfplumber, nlp, re, docx2txt, streamlit as st
+import PyPDF2, pdfplumber, nlp, re, docx2txt, streamlit as st, nltk
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import spacy
 from spacy.matcher import Matcher
+from nltk.corpus import stopwords
 from pathlib import Path
 
 
@@ -22,25 +23,41 @@ def compare_jd(resume_text, jd):
 
 def get_email_addresses(string):
     r = re.compile(r'[\w\.-]+@[\w\.-]+')
-    return r.findall(string)
+    return list(set(r.findall(string)))
 
 
 def get_phone_numbers(string):
     r = re.compile(r'(\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4})')
     phone_numbers = r.findall(string)
-    return [re.sub(r'\D', '', num) for num in phone_numbers if len(num) in [12, 13, 10]]
+    return list(set([re.sub(r'\D', '', num) for num in phone_numbers]))
 
+
+def ie_preprocess(document):
+    stop = stopwords.words('english')
+    document = ' '.join([i for i in document.split() if i not in stop])
+    sentences = nltk.sent_tokenize(document)
+    sentences = [nltk.word_tokenize(sent) for sent in sentences]
+    sentences = [nltk.pos_tag(sent) for sent in sentences]
+    return sentences
 
 def extract_name(resume_text):
-    nlp = spacy.load('en_core_web_sm')
-    matcher = Matcher(nlp.vocab)
-    nlp_text = nlp(resume_text)
-    pattern = [{'POS': 'PROPN'}, {'POS': 'PROPN'}]
-    matcher.add('NAME', [pattern], on_match=None)
-    matches = matcher(nlp_text)
-    for match_id, start, end in matches:
-        span = nlp_text[start:end]
-        return span.text
+    names = []
+    sentences = ie_preprocess(resume_text)
+    for tagged_sentence in sentences:
+        for chunk in nltk.ne_chunk(tagged_sentence):
+            if type(chunk) == nltk.tree.Tree:
+                if chunk.label() == 'PERSON':
+                    names.append(' '.join([c[0] for c in chunk]))
+    return names
+    # nlp = spacy.load('en_core_web_sm')
+    # matcher = Matcher(nlp.vocab)
+    # nlp_text = nlp(resume_text)
+    # pattern = [{'POS': 'PROPN'}, {'POS': 'PROPN'}]
+    # matcher.add('NAME', [pattern], on_match=None)
+    # matches = matcher(nlp_text)
+    # for match_id, start, end in matches:
+    #     span = nlp_text[start:end]
+    #     return span.text
 
 
 def get_skills(resume_text):
@@ -134,6 +151,3 @@ if len(total_files) != 0:
        "text/csv",
        key='download-csv'
     )
-
-
-
