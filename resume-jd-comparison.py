@@ -8,7 +8,6 @@ from spacy.matcher import Matcher
 from nltk.corpus import stopwords
 from pathlib import Path
 
-nltk.download('stopwords')
 
 def compare_jd(resume_text, jd):
     # Req_Clear = ''.join(open("./req.txt", 'r', encoding="utf8").readlines()).replace("\n", "")
@@ -33,32 +32,16 @@ def get_phone_numbers(string):
     return list(set([re.sub(r'\D', '', num) for num in phone_numbers]))
 
 
-def ie_preprocess(document):
-    stop = stopwords.words('english')
-    document = ' '.join([i for i in document.split() if i not in stop])
-    sentences = nltk.sent_tokenize(document)
-    sentences = [nltk.word_tokenize(sent) for sent in sentences]
-    sentences = [nltk.pos_tag(sent) for sent in sentences]
-    return sentences
-
 def extract_name(resume_text):
-    names = []
-    sentences = ie_preprocess(resume_text)
-    for tagged_sentence in sentences:
-        for chunk in nltk.ne_chunk(tagged_sentence):
-            if type(chunk) == nltk.tree.Tree:
-                if chunk.label() == 'PERSON':
-                    names.append(' '.join([c[0] for c in chunk]))
-    return names
-    # nlp = spacy.load('en_core_web_sm')
-    # matcher = Matcher(nlp.vocab)
-    # nlp_text = nlp(resume_text)
-    # pattern = [{'POS': 'PROPN'}, {'POS': 'PROPN'}]
-    # matcher.add('NAME', [pattern], on_match=None)
-    # matches = matcher(nlp_text)
-    # for match_id, start, end in matches:
-    #     span = nlp_text[start:end]
-    #     return span.text
+    nlp = spacy.load('en_core_web_sm')
+    matcher = Matcher(nlp.vocab)
+    nlp_text = nlp(resume_text)
+    pattern = [{'POS': 'PROPN'}, {'POS': 'PROPN'}]
+    matcher.add('NAME', [pattern], on_match=None)
+    matches = matcher(nlp_text)
+    for match_id, start, end in matches:
+        span = nlp_text[start:end]
+        return span.text
 
 
 def get_skills(resume_text):
