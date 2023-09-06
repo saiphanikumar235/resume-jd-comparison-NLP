@@ -8,6 +8,7 @@ from spacy.matcher import Matcher
 from nltk.corpus import stopwords
 from pathlib import Path
 
+nltk.download('stopwords')
 
 def compare_jd(resume_text, jd):
     # Req_Clear = ''.join(open("./req.txt", 'r', encoding="utf8").readlines()).replace("\n", "")
