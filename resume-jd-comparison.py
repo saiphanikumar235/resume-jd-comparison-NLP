@@ -1,12 +1,16 @@
+import os
+
 import numpy as np
 import pandas as pd
 import PyPDF2, pdfplumber, nlp, re, docx2txt, streamlit as st, nltk
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import spacy
+import locationtagger
 from spacy.matcher import Matcher
 from nltk.corpus import stopwords
 from pathlib import Path
+from pyresparser import ResumeParser
 
 
 def compare_jd(resume_text, jd):
@@ -30,6 +34,25 @@ def get_phone_numbers(string):
     r = re.compile(r'(\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4})')
     phone_numbers = r.findall(string)
     return list(set([re.sub(r'\D', '', num) for num in phone_numbers]))
+
+
+def get_education(path):
+    print(os.listdir())
+    education_new = ResumeParser(path).get_extracted_data()
+    print(education_new)
+    return education_new['degree']
+
+
+def get_current_location(resume_text):
+    nlp = spacy.load('en_core_web_sm')
+    doc = nlp(resume_text)
+    location_entities = []
+    for ent in doc.ents:
+        if ent.label_ == "GPE":
+            location_entities.append(ent.text)
+    if location_entities:
+        return location_entities[0]
+    return None
 
 
 def extract_name(resume_text):
@@ -61,6 +84,19 @@ def get_skills(resume_text):
     return [word.capitalize() for word in set([word.lower() for word in skillset])]
 
 
+def extract_certifications(resume_text):
+    pattern = r"(?i)(certification|certifications|certified)(.*?)\n"
+
+    # Use regular expression to find certification matches
+    certification_matches = re.findall(pattern, resume_text)
+
+    certifications = []
+    for match in certification_matches:
+        certifications.append(match[1].strip())
+
+    return certifications
+
+
 def get_exp(resume_text):
     nlp = spacy.load('en_core_web_sm')
     doc = nlp(resume_text)
@@ -71,16 +107,16 @@ def get_exp(resume_text):
     return None
 
 
-def get_details(resume_text):
-    extracted_text = {}
-    email = get_email_addresses(resume_text)
-    extracted_text["E-Mail"] = email
-    phone_number = get_phone_numbers(resume_text)
-    extracted_text["Phone Number"] = phone_number
-    name = extract_name(resume_text)
-    extracted_text["Name"] = name
-    extracted_text['Skills'] = get_skills(resume_text)
-    extracted_text['Experience'] = get_exp(resume_text)
+def get_details(resume_text, path):
+    extracted_text = {"Name": extract_name(resume_text),
+                      "E-Mail": get_email_addresses(resume_text),
+                      "Phone Number": get_phone_numbers(resume_text),
+                      'Skills': get_skills(resume_text),
+                      'Experience': get_exp(resume_text),
+                      'Education': get_education(path),
+                      'Approx current location': get_current_location(resume_text),
+                      'certifications': extract_certifications(resume_text)
+                      }
     return extracted_text
 
 
@@ -98,7 +134,7 @@ def read_pdf(file):
             text = page.extract_text()
             Script.append(text)
     Script = ''.join(Script)
-    resume_data = Script.replace("\n", "")
+    resume_data = Script.replace("\n", " ")
     return resume_data
 
 
@@ -108,7 +144,7 @@ def read_docx(file):
 
 
 st.title("Resume and JD comparison")
-jd = st.text_input('')
+jd = st.text_input('please enter the job description below:')
 uploaded_resumes = st.file_uploader(
     "Upload a resume (PDF or Docx)",
     type=["pdf", "docx"],
@@ -120,7 +156,8 @@ for uploaded_resume in uploaded_resumes:
         resume_text = read_pdf(uploaded_resume)
     else:
         resume_text = read_docx(uploaded_resume)
-    resume_details = get_details(resume_text)
+    # resume_text = TextCleaner(resume_text).clean_text()
+    resume_details = get_details(resume_text, uploaded_resume)
     resume_details['Resume-Score'] = compare_jd(resume_text, jd)
     resume_details['file-name'] = uploaded_resume.name
     total_files.append(
@@ -129,9 +166,9 @@ for uploaded_resume in uploaded_resumes:
 if len(total_files) != 0:
     res_df = st.table(pd.DataFrame(total_files))
     st.download_button(
-       "Press to Download",
-       pd.DataFrame(total_files).to_csv(),
-       "file.csv",
-       "text/csv",
-       key='download-csv'
+        "Press to Download",
+        pd.DataFrame(total_files).to_csv(),
+        "file.csv",
+        "text/csv",
+        key='download-csv'
     )
