@@ -1,6 +1,8 @@
 import os
 
 import numpy as np
+import nltk
+nltk.download('stopwords')
 import pandas as pd
 import PyPDF2, pdfplumber, nlp, re, docx2txt, streamlit as st, nltk
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -12,8 +14,7 @@ from pathlib import Path
 from pyresparser import ResumeParser
 
 
-import nltk
-nltk.download('stopwords')
+
 os.system("python -m spacy download en_core_web_sm")
 os.system("python -m nltk.downloader words")
 os.system("python -m nltk.downloader stopwords")
