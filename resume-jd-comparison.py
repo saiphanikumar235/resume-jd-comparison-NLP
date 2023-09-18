@@ -12,6 +12,8 @@ from pathlib import Path
 from pyresparser import ResumeParser
 
 
+import nltk
+nltk.download('stopwords')
 os.system("python -m spacy download en_core_web_sm")
 os.system("python -m nltk.downloader words")
 os.system("python -m nltk.downloader stopwords")
