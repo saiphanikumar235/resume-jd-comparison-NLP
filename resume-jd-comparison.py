@@ -6,7 +6,6 @@ import PyPDF2, pdfplumber, nlp, re, docx2txt, streamlit as st, nltk
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import spacy
-import locationtagger
 from spacy.matcher import Matcher
 from nltk.corpus import stopwords
 from pathlib import Path
