@@ -12,6 +12,11 @@ from pathlib import Path
 from pyresparser import ResumeParser
 
 
+os.system("python -m spacy download en_core_web_sm")
+os.system("python -m nltk.downloader words")
+os.system("python -m nltk.downloader stopwords")
+
+
 def compare_jd(resume_text, jd):
     # Req_Clear = ''.join(open("./req.txt", 'r', encoding="utf8").readlines()).replace("\n", "")
     jd_text = jd
