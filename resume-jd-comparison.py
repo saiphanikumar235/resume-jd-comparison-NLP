@@ -105,12 +105,25 @@ def extract_certifications(resume_text):
 
 
 def get_exp(resume_text):
+    words_to_numbers = {
+        'one': '1',
+        'two': '2',
+        'three': '3',
+        'four': '4',
+        'five': '5',
+        'six': '6',
+        'seven': '7',
+        'eight': '8',
+        'nine': '9',
+        'zero': '0'
+    }
+    pattern = re.compile(r'\b(' + '|'.join(words_to_numbers.keys()) + r')\b')
     nlp = spacy.load('en_core_web_sm')
     doc = nlp(resume_text)
     for ent in doc.ents:
         if ent.label_ == "DATE" and "year" in ent.text.lower():
             years_of_experience = ent.text.split()[0]
-            return years_of_experience
+            return re.sub(pattern, lambda x: words_to_numbers[x.group()], years_of_experience)
     return None
 
 
