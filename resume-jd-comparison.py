@@ -58,7 +58,7 @@ def get_current_location(resume_text):
         if ent.label_ == "GPE":
             location_entities.append(ent.text)
     if location_entities:
-        return location_entities[0]
+        return ','.join(location_entities)
     return None
 
 
