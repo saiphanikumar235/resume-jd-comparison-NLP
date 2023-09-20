@@ -34,20 +34,20 @@ def compare_jd(resume_text, jd):
 
 def get_email_addresses(string):
     r = re.compile(r'[\w\.-]+@[\w\.-]+')
-    return list(set(r.findall(string)))
+    return ','.join(list(set(r.findall(string))))
 
 
 def get_phone_numbers(string):
     r = re.compile(r'(\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4})')
     phone_numbers = r.findall(string)
-    return list(set([re.sub(r'\D', '', num) for num in phone_numbers]))
+    return ','.join(list(set([re.sub(r'\D', '', num) for num in phone_numbers])))
 
 
 def get_education(path):
     print(os.listdir())
     education_new = ResumeParser(path).get_extracted_data()
     print(education_new)
-    return education_new['degree']
+    return ','.join(education_new['degree']) if education_new['degree'] is not None else None
 
 
 def get_current_location(resume_text):
@@ -88,7 +88,7 @@ def get_skills(resume_text):
         if i in skills:
             skillset.append(i)
 
-    return [word.capitalize() for word in set([word.lower() for word in skillset])]
+    return ','.join([word.capitalize() for word in set([word.lower() for word in skillset])])
 
 
 def extract_certifications(resume_text):
@@ -101,7 +101,7 @@ def extract_certifications(resume_text):
     for match in certification_matches:
         certifications.append(match[1].strip())
 
-    return certifications
+    return ','.join(certifications)
 
 
 def get_exp(resume_text):
