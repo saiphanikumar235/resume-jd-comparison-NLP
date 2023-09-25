@@ -111,7 +111,7 @@ def extract_name(resume_text):
         span = nlp_text[start:end]
         return span.text if span.text in [r.lower().replace("\n", "") for r in
                                               open('./linkedin skill', 'r', encoding="utf8").readlines()] else \
-        get_email_addresses(resume_text).split('@')[0]
+        re.sub(r'\d', '',get_email_addresses(resume_text).split('@')[0])
 
 
 def get_skills(resume_text):
