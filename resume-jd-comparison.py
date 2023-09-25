@@ -13,6 +13,7 @@ from spacy.matcher import Matcher
 from spacy.tokens import Span
 from nltk.corpus import stopwords
 from pathlib import Path
+import re
 from pyresparser import ResumeParser
 from gensim.models import Word2Vec
 from nltk.tokenize import word_tokenize
