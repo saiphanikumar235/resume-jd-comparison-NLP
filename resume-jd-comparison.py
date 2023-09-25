@@ -19,10 +19,10 @@ from nltk.tokenize import word_tokenize
 import nltk
 import numpy as np
 
-os.system("python -m spacy download en_core_web_sm")
-os.system("python -m nltk.downloader words")
-os.system("python -m nltk.downloader stopwords")
-nltk.download('punkt')
+# os.system("python -m spacy download en_core_web_sm")
+# os.system("python -m nltk.downloader words")
+# os.system("python -m nltk.downloader stopwords")
+# nltk.download('punkt')
 
 
 def cosine_similarity(vec1, vec2):
@@ -59,9 +59,16 @@ def get_email_addresses(string):
 
 
 def get_phone_numbers(string):
-    r = re.compile(r'(\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4})')
-    phone_numbers = r.findall(string)
-    return ','.join(list(set([re.sub(r'\D', '', num) for num in phone_numbers])))
+    nlp = spacy.load("en_core_web_sm")
+    phone_number_pattern = r"(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}"
+    doc = nlp(string)
+    extracted_phone_numbers = []
+    for match in re.finditer(phone_number_pattern, doc.text):
+        extracted_phone_numbers.append(match.group())
+    return ','.join(extracted_phone_numbers) if len(extracted_phone_numbers) != 0 else None
+    # r = re.compile(r'(\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4})')
+    # phone_numbers = r.findall(string)
+    # return ','.join(list(set([re.sub(r'\D', '', num) for num in phone_numbers])))
 
 
 def get_education(path, resume_text):
@@ -109,10 +116,11 @@ def extract_name(resume_text):
     matches = matcher(nlp_text)
     for match_id, start, end in matches:
         span = nlp_text[start:end]
-        print(span.text)
         if span.text.lower() in [r.lower().replace("\n", "") for r in
                                               open('./linkedin skill', 'r', encoding="utf8").readlines()]:
-            return re.sub(r'\d', '', get_email_addresses(resume_text).split('@')[0])
+            return re.sub(r'\d', '', get_email_addresses(resume_text).split('@')[0]).capitalize()
+        if '@' in span.text:
+            return span.text.replace(get_email_addresses(resume_text), '')
         return span.text
 
 
