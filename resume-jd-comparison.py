@@ -141,7 +141,7 @@ def extract_certifications(resume_text):
     for match in certification_matches:
         certifications.append(match[1].strip())
 
-    return ','.join(certifications) if len(certifications) != 0 else None
+    return ','.join(certifications) if len(certifications) != 0 else "No Certifications found"
 
 
 def get_exp(resume_text):
