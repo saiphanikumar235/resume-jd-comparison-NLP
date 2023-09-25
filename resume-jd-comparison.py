@@ -60,14 +60,7 @@ def get_email_addresses(string):
 
 def get_phone_numbers(string):
     # r = re.compile(r'(\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4})')
-    r = re.complile(r'''(
-    (\\d{3}|\\(d{3}\\))?
-    (\\s|-|\\.)?
-    (\\d{3})
-    (\\s|-|\\.)
-    (\\d{4})
-    (\\s*(ext|x|ext.)\\s*(\\d{2,5}))?
-)''', re.VERBOSE)
+    r = re.complile(r'((\\d{3}|\\(d{3}\\))?(\\s|-|\\.)?(\\d{3})(\\s|-|\\.)(\\d{4})(\\s*(ext|x|ext.)\\s*(\\d{2,5}))?)', re.VERBOSE)
     phone_numbers = r.findall(string)
     return ','.join(list(set([re.sub(r'\D', '', num) for num in phone_numbers])))
 
