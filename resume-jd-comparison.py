@@ -19,11 +19,11 @@ from nltk.tokenize import word_tokenize
 import nltk
 import numpy as np
 
-
 os.system("python -m spacy download en_core_web_sm")
 os.system("python -m nltk.downloader words")
 os.system("python -m nltk.downloader stopwords")
 nltk.download('punkt')
+
 
 def cosine_similarity(vec1, vec2):
     dot_product = np.dot(vec1, vec2)
@@ -32,22 +32,24 @@ def cosine_similarity(vec1, vec2):
     similarity = dot_product / (norm_vec1 * norm_vec2)
     return similarity
 
+
 def compare_jd(resume_text, jd):
-    resume_tokens = word_tokenize(resume_text.lower())
-    job_desc_tokens = word_tokenize(jd.lower())
-    model = Word2Vec([resume_tokens, job_desc_tokens], vector_size=100, window=5, min_count=1, sg=0)
-    resume_vector = np.mean([model.wv[token] for token in resume_tokens], axis=0)
-    job_desc_vector = np.mean([model.wv[token] for token in job_desc_tokens], axis=0)
-    MatchPercentage = cosine_similarity(resume_vector, job_desc_vector) * 100
-    # Req_Clear = ''.join(open("./req.txt", 'r', encoding="utf8").readlines()).replace("\n", "")
-    # jd_text = jd
-    # Match_Test = [resume_text.lower(), jd_text.lower()]
-    # cv = TfidfVectorizer()
-    # count_matrix = cv.fit_transform(Match_Test)
-    # MatchPercentage = cosine_similarity(count_matrix[0], count_matrix[1])
-    # MatchPercentage = round(MatchPercentage[0][0]*100, 2)
-    # print('Match Percentage is :' + str(MatchPercentage) + '% to Requirement')
-    return MatchPercentage
+    if jd != '':
+        resume_tokens = word_tokenize(resume_text.lower())
+        job_desc_tokens = word_tokenize(jd.lower())
+        model = Word2Vec([resume_tokens, job_desc_tokens], vector_size=100, window=5, min_count=1, sg=0)
+        resume_vector = np.mean([model.wv[token] for token in resume_tokens], axis=0)
+        job_desc_vector = np.mean([model.wv[token] for token in job_desc_tokens], axis=0)
+        MatchPercentage = cosine_similarity(resume_vector, job_desc_vector) * 100
+        # Req_Clear = ''.join(open("./req.txt", 'r', encoding="utf8").readlines()).replace("\n", "")
+        # jd_text = jd
+        # Match_Test = [resume_text.lower(), jd_text.lower()]
+        # cv = TfidfVectorizer()
+        # count_matrix = cv.fit_transform(Match_Test)
+        # MatchPercentage = cosine_similarity(count_matrix[0], count_matrix[1])
+        # MatchPercentage = round(MatchPercentage[0][0]*100, 2)
+        # print('Match Percentage is :' + str(MatchPercentage) + '% to Requirement')
+        return MatchPercentage
 
 
 def get_email_addresses(string):
@@ -106,7 +108,9 @@ def extract_name(resume_text):
     matches = matcher(nlp_text)
     for match_id, start, end in matches:
         span = nlp_text[start:end]
-        return span.text if span.text not in [r.lower().replace("\n", "") for r in open('./linkedin skill', 'r', encoding="utf8").readlines()] else get_email_addresses(resume_text).split('@')[0]
+        return span.text if span.text not in [r.lower().replace("\n", "") for r in
+                                              open('./linkedin skill', 'r', encoding="utf8").readlines()] else \
+        get_email_addresses(resume_text).split('@')[0]
 
 
 def get_skills(resume_text):
@@ -136,7 +140,7 @@ def extract_certifications(resume_text):
     for match in certification_matches:
         certifications.append(match[1].strip())
 
-    return ','.join(certifications) if len(certifications) == 0 else None
+    return ','.join(certifications) if len(certifications) != 0 else None
 
 
 def get_exp(resume_text):
@@ -179,7 +183,7 @@ def get_details(resume_text, path):
                       'Skills': get_skills(resume_text),
                       'Experience': get_exp(resume_text),
                       'Education': get_education(path, resume_text),
-                      'Approx current location': None, #get_current_location(resume_text),
+                      'Approx current location': None,  # get_current_location(resume_text),
                       'certifications': extract_certifications(resume_text)
                       }
     return extracted_text
