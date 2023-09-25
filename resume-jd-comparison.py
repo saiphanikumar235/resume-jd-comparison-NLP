@@ -2,32 +2,50 @@ import os
 
 import numpy as np
 import nltk
+
 nltk.download('stopwords')
 import pandas as pd
 import PyPDF2, pdfplumber, nlp, re, docx2txt, streamlit as st, nltk
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import spacy
 from spacy.matcher import Matcher
+from spacy.tokens import Span
 from nltk.corpus import stopwords
 from pathlib import Path
 from pyresparser import ResumeParser
-
+from gensim.models import Word2Vec
+from nltk.tokenize import word_tokenize
+import nltk
+import numpy as np
 
 
 os.system("python -m spacy download en_core_web_sm")
 os.system("python -m nltk.downloader words")
 os.system("python -m nltk.downloader stopwords")
+nltk.download('punkt')
 
+def cosine_similarity(vec1, vec2):
+    dot_product = np.dot(vec1, vec2)
+    norm_vec1 = np.linalg.norm(vec1)
+    norm_vec2 = np.linalg.norm(vec2)
+    similarity = dot_product / (norm_vec1 * norm_vec2)
+    return similarity
 
 def compare_jd(resume_text, jd):
+    resume_tokens = word_tokenize(resume_text.lower())
+    job_desc_tokens = word_tokenize(jd.lower())
+    model = Word2Vec([resume_tokens, job_desc_tokens], vector_size=100, window=5, min_count=1, sg=0)
+    resume_vector = np.mean([model.wv[token] for token in resume_tokens], axis=0)
+    job_desc_vector = np.mean([model.wv[token] for token in job_desc_tokens], axis=0)
+    MatchPercentage = cosine_similarity(resume_vector, job_desc_vector) * 100
     # Req_Clear = ''.join(open("./req.txt", 'r', encoding="utf8").readlines()).replace("\n", "")
-    jd_text = jd
-    Match_Test = [resume_text, jd_text]
-    cv = TfidfVectorizer()
-    count_matrix = cv.fit_transform(Match_Test)
-    MatchPercentage = cosine_similarity(count_matrix)[0][1] * 100
-    MatchPercentage = round(MatchPercentage, 2)
+    # jd_text = jd
+    # Match_Test = [resume_text.lower(), jd_text.lower()]
+    # cv = TfidfVectorizer()
+    # count_matrix = cv.fit_transform(Match_Test)
+    # MatchPercentage = cosine_similarity(count_matrix[0], count_matrix[1])
+    # MatchPercentage = round(MatchPercentage[0][0]*100, 2)
     # print('Match Percentage is :' + str(MatchPercentage) + '% to Requirement')
     return MatchPercentage
 
@@ -43,11 +61,28 @@ def get_phone_numbers(string):
     return ','.join(list(set([re.sub(r'\D', '', num) for num in phone_numbers])))
 
 
-def get_education(path):
-    print(os.listdir())
+def get_education(path, resume_text):
     education_new = ResumeParser(path).get_extracted_data()
-    print(education_new)
-    return ','.join(education_new['degree']) if education_new['degree'] is not None else None
+    education_new = education_new['degree']
+    # if education_new is None:
+    #     education_new = []
+    #     nlp = spacy.load('en_core_web_sm')
+    #     STOPWORDS = set(stopwords.words('english'))
+    #     EDUCATION = [
+    #         'ME', 'M.E', 'M.E.',
+    #         'BTECH', 'B.TECH', 'M.TECH', 'MTECH',
+    #         'PHD', 'phd', 'ph.d', 'Ph.D.', 'MBA', 'mba', 'graduate', 'post-graduate', '5 year integrated masters',
+    #         'masters', 'bachelor', "bachelor's"
+    #     ]
+    #     nlp_text = nlp(resume_text)
+    #     nlp_text = [sent.string.strip().strip("\n") for sent in nlp_text.sents]
+    #     for index, text in enumerate(nlp_text):
+    #         for tex in text.split():
+    #             for tex in text.split():
+    #                 tex = re.sub(r'[?|$|.|!|,]', r'', tex)
+    #                 if tex.upper() in EDUCATION and tex not in STOPWORDS:
+    #                     education_new.append(tex)
+    return ','.join(education_new) if education_new is not None else None
 
 
 def get_current_location(resume_text):
@@ -55,7 +90,7 @@ def get_current_location(resume_text):
     doc = nlp(resume_text)
     location_entities = []
     for ent in doc.ents:
-        if ent.label_ == "GPE":
+        if ent.label_ in ['GPE', 'LOC']:
             location_entities.append(ent.text)
     if location_entities:
         return location_entities[0]
@@ -71,7 +106,7 @@ def extract_name(resume_text):
     matches = matcher(nlp_text)
     for match_id, start, end in matches:
         span = nlp_text[start:end]
-        return span.text
+        return span.text if span.text not in [r.lower().replace("\n", "") for r in open('./linkedin skill', 'r', encoding="utf8").readlines()] else get_email_addresses(resume_text).split('@')[0]
 
 
 def get_skills(resume_text):
@@ -92,7 +127,7 @@ def get_skills(resume_text):
 
 
 def extract_certifications(resume_text):
-    pattern = r"(?i)(certification|certifications|certified)(.*?)\n"
+    pattern = r"(?i)(certifications|certification|certified)(.*?)\n"
 
     # Use regular expression to find certification matches
     certification_matches = re.findall(pattern, resume_text)
@@ -101,7 +136,7 @@ def extract_certifications(resume_text):
     for match in certification_matches:
         certifications.append(match[1].strip())
 
-    return ','.join(certifications)
+    return ','.join(certifications) if len(certifications) == 0 else None
 
 
 def get_exp(resume_text):
@@ -122,8 +157,18 @@ def get_exp(resume_text):
     doc = nlp(resume_text)
     for ent in doc.ents:
         if ent.label_ == "DATE" and "year" in ent.text.lower():
-            years_of_experience = ent.text.split()[0]
-            return re.sub(pattern, lambda x: words_to_numbers[x.group()], years_of_experience)
+            years_of_experience = ent.text
+            for y in years_of_experience.split():
+                if y.lower() in words_to_numbers.keys() or y.replace('+', '').isnumeric():
+                    years = f"{y.replace('+', '')}+"
+                    return re.sub(pattern, lambda x: words_to_numbers[x.group()], years)
+    for ent in doc.ents:
+        if ent.label_ == 'CARDINAL':
+            years_of_experience = ent.text
+            for y in years_of_experience.split():
+                if y.lower() in words_to_numbers.keys() or y.isnumeric():
+                    years = f'{y}+'
+                    return re.sub(pattern, lambda x: words_to_numbers[x.group()], years)
     return None
 
 
@@ -133,8 +178,8 @@ def get_details(resume_text, path):
                       "Phone Number": get_phone_numbers(resume_text),
                       'Skills': get_skills(resume_text),
                       'Experience': get_exp(resume_text),
-                      'Education': get_education(path),
-                      'Approx current location': get_current_location(resume_text),
+                      'Education': get_education(path, resume_text),
+                      'Approx current location': None, #get_current_location(resume_text),
                       'certifications': extract_certifications(resume_text)
                       }
     return extracted_text
@@ -176,7 +221,6 @@ for uploaded_resume in uploaded_resumes:
         resume_text = read_pdf(uploaded_resume)
     else:
         resume_text = read_docx(uploaded_resume)
-    # resume_text = TextCleaner(resume_text).clean_text()
     resume_details = get_details(resume_text, uploaded_resume)
     resume_details['Resume-Score'] = compare_jd(resume_text, jd)
     resume_details['file-name'] = uploaded_resume.name
@@ -186,7 +230,7 @@ for uploaded_resume in uploaded_resumes:
 if len(total_files) != 0:
     res_df = st.table(pd.DataFrame(total_files))
     st.download_button(
-        "Press to Download",
+        "Click to Download",
         pd.DataFrame(total_files).to_csv(),
         "file.csv",
         "text/csv",
