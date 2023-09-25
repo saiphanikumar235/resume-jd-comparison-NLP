@@ -50,6 +50,7 @@ def compare_jd(resume_text, jd):
         # MatchPercentage = round(MatchPercentage[0][0]*100, 2)
         # print('Match Percentage is :' + str(MatchPercentage) + '% to Requirement')
         return MatchPercentage
+    return "No JD to Compare"
 
 
 def get_email_addresses(string):
