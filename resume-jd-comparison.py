@@ -17,7 +17,6 @@ from pyresparser import ResumeParser
 from gensim.models import Word2Vec
 from nltk.tokenize import word_tokenize
 import nltk
-import docx
 import numpy as np
 
 # os.system("python -m spacy download en_core_web_sm")
