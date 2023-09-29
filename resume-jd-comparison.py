@@ -22,7 +22,7 @@ import numpy as np
 # os.system("python -m spacy download en_core_web_sm")
 # os.system("python -m nltk.downloader words")
 # os.system("python -m nltk.downloader stopwords")
-# nltk.download('punkt')
+nltk.download('punkt')
 
 
 def cosine_similarity(vec1, vec2):
