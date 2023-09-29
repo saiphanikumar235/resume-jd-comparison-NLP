@@ -17,6 +17,7 @@ from pyresparser import ResumeParser
 from gensim.models import Word2Vec
 from nltk.tokenize import word_tokenize
 import nltk
+import docx
 import numpy as np
 
 # os.system("python -m spacy download en_core_web_sm")
@@ -74,37 +75,57 @@ def get_phone_numbers(string):
 def get_education(path, resume_text):
     education_new = ResumeParser(path).get_extracted_data()
     education_new = education_new['degree']
-    # if education_new is None:
-    #     education_new = []
-    #     nlp = spacy.load('en_core_web_sm')
-    #     STOPWORDS = set(stopwords.words('english'))
-    #     EDUCATION = [
-    #         'ME', 'M.E', 'M.E.',
-    #         'BTECH', 'B.TECH', 'M.TECH', 'MTECH',
-    #         'PHD', 'phd', 'ph.d', 'Ph.D.', 'MBA', 'mba', 'graduate', 'post-graduate', '5 year integrated masters',
-    #         'masters', 'bachelor', "bachelor's"
-    #     ]
-    #     nlp_text = nlp(resume_text)
-    #     nlp_text = [sent.string.strip().strip("\n") for sent in nlp_text.sents]
-    #     for index, text in enumerate(nlp_text):
-    #         for tex in text.split():
-    #             for tex in text.split():
-    #                 tex = re.sub(r'[?|$|.|!|,]', r'', tex)
-    #                 if tex.upper() in EDUCATION and tex not in STOPWORDS:
-    #                     education_new.append(tex)
+    if education_new is None:
+        education_new = []
+        education_patterns = [
+            r"Bachelor of Engineering",
+            r"\BE",
+            r"\B\.E"
+            r"Bachelor of Technology|",
+            r"\B\.Tech",
+            r"\BTech",
+            r"\B Tech"
+            r"Bachelor of Science|B\.Sc|BSc",
+        ]
+        education = []
+        for pattern in education_patterns:
+            matches = re.finditer(pattern, resume_text, re.IGNORECASE)
+            for match in matches:
+                education.append(match.group())
+        for c in education:
+            if c.lower() in ['Bachelor of Technology'.lower(),'Bachelor of Engineering'.lower(), 'B.Tech'.lower(), 'B Tech'.lower()]:
+                education_new.append(c)
+                break
+        for c in education:
+            if c.upper() in ['BE']:
+                education_new.append(c)
+                break
+        if len(education_new) == 0:
+            if 'BE(' in resume_text.replace(" ",'') or 'B.E' in resume_text.replace(' ', ''):
+                education_new.append("BE")
     return ','.join(education_new) if education_new is not None else None
 
 
 def get_current_location(resume_text):
     nlp = spacy.load('en_core_web_sm')
     doc = nlp(resume_text)
-    location_entities = []
-    for ent in doc.ents:
-        if ent.label_ in ['GPE', 'LOC']:
-            location_entities.append(ent.text)
-    if location_entities:
-        return location_entities[0]
-    return None
+    tokens = [token.text for token in doc if not token.is_stop]
+    location = [r.lower().replace("\n", "") for r in open('./cities.txt', 'r', encoding="utf8").readlines()]
+    locations = []
+    for i in tokens:
+        if i.lower() in location:
+            locations.append(i)
+    for i in doc.noun_chunks:
+        i = i.text.lower().strip()
+        if i in location:
+            locations.append(i)
+    locations = list(set(locations) & set(location))
+    if len(locations) == 0:
+        locations = []
+        for w in resume_text.split():
+            if re.sub('[^A-Za-z]+', '', w.lower()) in location:
+                locations.append(re.sub('[^A-Za-z]+', '', w).replace("india", ''))
+    return ','.join([word.capitalize() for word in set([word.lower() for word in locations])])
 
 
 def extract_name(resume_text):
@@ -195,7 +216,7 @@ def get_details(resume_text, path):
                       'Skills': get_skills(resume_text),
                       'Experience': get_exp(resume_text),
                       'Education': get_education(path, resume_text),
-                      'Approx current location': None,  # get_current_location(resume_text),
+                      'Approx current location': get_current_location(resume_text),
                       'certifications': extract_certifications(resume_text)
                       }
     return extracted_text
