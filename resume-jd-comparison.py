@@ -264,7 +264,7 @@ for uploaded_resume in uploaded_resumes:
         resume_details
     )
 if len(total_files) != 0:
-    res_df = st.table(pd.DataFrame(total_files).set_index(range(1, len(total_files)+1)))
+    res_df = st.table(pd.DataFrame(total_files).set_index(range(1, len(total_files)+1), inplace=True))
     st.download_button(
         "Click to Download",
         pd.DataFrame(total_files).to_csv(),
