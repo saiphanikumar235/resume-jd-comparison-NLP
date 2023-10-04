@@ -264,10 +264,14 @@ for uploaded_resume in uploaded_resumes:
         resume_details
     )
 if len(total_files) != 0:
-    res_df = st.table(pd.DataFrame(total_files).set_index(range(1, len(total_files)+1), inplace=True))
+    df = pd.DataFrame(total_files)
+    df.index = df.index.rename('sr.no')
+    df.index = np.arange(1, len(df) + 1)
+    df['Phone Number'] = df['Phone Number'].astype(str)
+    res_df = st.table(df)
     st.download_button(
         "Click to Download",
-        pd.DataFrame(total_files).to_csv(),
+        df.to_csv(),
         "file.csv",
         "text/csv",
         key='download-csv'
