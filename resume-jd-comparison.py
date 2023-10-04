@@ -265,10 +265,10 @@ for uploaded_resume in uploaded_resumes:
     )
 if len(total_files) != 0:
     df = pd.DataFrame(total_files)
-    df.index = df.index.rename('sr.no')
     df.index = np.arange(1, len(df) + 1)
-    df['Phone Number'] = df['Phone Number'].astype(str)
-    res_df = st.table(df)
+    df.index.names = ['sr_no']
+    res_df = st.dataframe(df)
+    df['Phone Number'] = '"' + df['Phone Number'] + '"'
     st.download_button(
         "Click to Download",
         df.to_csv(),
