@@ -34,7 +34,7 @@ nltk.download('punkt')
 
 
 def get_details_from_openai(text, query):
-    api_key = st.secrets['api_key']
+    api_key = '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'
     # Split the text into chunks using Langchain's CharacterTextSplitter
     text_splitter = CharacterTextSplitter(
         separator="\n",
