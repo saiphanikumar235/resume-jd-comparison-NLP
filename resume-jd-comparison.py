@@ -31,9 +31,10 @@ import time
 # os.system("python -m nltk.downloader stopwords")
 nltk.download('punkt')
 
+knowledgeBase = ''
 
 
-def get_details_from_openai(text, query):
+def get_knowledge_base(text):
     api_key = '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'
     # Split the text into chunks using Langchain's CharacterTextSplitter
     text_splitter = CharacterTextSplitter(
@@ -46,7 +47,12 @@ def get_details_from_openai(text, query):
 
     # Convert the chunks of text into embeddings to form a knowledge base
     embeddings = OpenAIEmbeddings(openai_api_key=api_key)
+    global knowledgeBase
     knowledgeBase = FAISS.from_texts(chunks, embeddings)
+
+
+def get_details_from_openai(text, query):
+    api_key = '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'
     docs = knowledgeBase.similarity_search(query)
     llm = OpenAI(openai_api_key=api_key)
     chain = load_qa_chain(llm, chain_type='stuff')
@@ -156,7 +162,6 @@ def extract_certifications(resume_text):
     return r
 
 
-
 def get_exp(resume_text):
     words_to_numbers = {
         'one': '1',
@@ -244,6 +249,7 @@ for uploaded_resume in uploaded_resumes:
         resume_text = read_pdf(uploaded_resume)
     else:
         resume_text = read_docx(uploaded_resume)
+    get_knowledge_base(resume_text)
     resume_details = get_details(resume_text, uploaded_resume)
     resume_details['Resume-Score'] = compare_jd(resume_text, jd)
     resume_details['file-name'] = uploaded_resume.name
