@@ -10,3 +10,6 @@ nltk
 pyresparser
 gensim
 matplotlib
+langchain
+langsmith
+fsspec
