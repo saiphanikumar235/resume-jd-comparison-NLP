@@ -1,278 +1,73 @@
+import openai
+from dotenv import load_dotenv
 import os
+from PyPDF2 import PdfReader
+import streamlit as st
+from langchain.text_splitter import CharacterTextSplitter
+from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain import FAISS
+from langchain.chains.question_answering import load_qa_chain
+from langchain.llms import OpenAI
+from langchain.callbacks import get_openai_callback
+import docx2txt
 
-import numpy as np
-import nltk
-
-nltk.download('stopwords')
-import pandas as pd
-import PyPDF2, pdfplumber, nlp, re, docx2txt, streamlit as st, nltk
-from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-import spacy
-from spacy.matcher import Matcher
-from spacy.tokens import Span
-from nltk.corpus import stopwords
-from pathlib import Path
-from pyresparser import ResumeParser
-from gensim.models import Word2Vec
-from nltk.tokenize import word_tokenize
-import nltk
-import numpy as np
-
-# os.system("python -m spacy download en_core_web_sm")
-# os.system("python -m nltk.downloader words")
-# os.system("python -m nltk.downloader stopwords")
-nltk.download('punkt')
+# Load environment variables
+# load_dotenv()
+api_key = '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'
 
 
-def cosine_similarity(vec1, vec2):
-    dot_product = np.dot(vec1, vec2)
-    norm_vec1 = np.linalg.norm(vec1)
-    norm_vec2 = np.linalg.norm(vec2)
-    similarity = dot_product / (norm_vec1 * norm_vec2)
-    return similarity
-
-
-def compare_jd(resume_text, jd):
-    if jd != '':
-        resume_tokens = word_tokenize(resume_text.lower())
-        job_desc_tokens = word_tokenize(jd.lower())
-        model = Word2Vec([resume_tokens, job_desc_tokens], vector_size=100, window=5, min_count=1, sg=0)
-        resume_vector = np.mean([model.wv[token] for token in resume_tokens], axis=0)
-        job_desc_vector = np.mean([model.wv[token] for token in job_desc_tokens], axis=0)
-        MatchPercentage = cosine_similarity(resume_vector, job_desc_vector) * 100
-        # Req_Clear = ''.join(open("./req.txt", 'r', encoding="utf8").readlines()).replace("\n", "")
-        # jd_text = jd
-        # Match_Test = [resume_text.lower(), jd_text.lower()]
-        # cv = TfidfVectorizer()
-        # count_matrix = cv.fit_transform(Match_Test)
-        # MatchPercentage = cosine_similarity(count_matrix[0], count_matrix[1])
-        # MatchPercentage = round(MatchPercentage[0][0]*100, 2)
-        # print('Match Percentage is :' + str(MatchPercentage) + '% to Requirement')
-        return MatchPercentage
-    return "No JD to Compare"
-
-
-def get_email_addresses(string):
-    r = re.compile(r'[\w\.-]+@[\w\.-]+')
-    return ','.join(list(set(r.findall(string))))
-
-
-def get_phone_numbers(string):
-    nlp = spacy.load("en_core_web_sm")
-    phone_number_pattern = r"(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}"
-    doc = nlp(string)
-    extracted_phone_numbers = []
-    for match in re.finditer(phone_number_pattern, doc.text):
-        extracted_phone_numbers.append(match.group())
-    return ','.join(extracted_phone_numbers) if len(extracted_phone_numbers) != 0 else None
-    # r = re.compile(r'(\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4})')
-    # phone_numbers = r.findall(string)
-    # return ','.join(list(set([re.sub(r'\D', '', num) for num in phone_numbers])))
-
-
-def get_education(path, resume_text):
-    education_new = ResumeParser(path).get_extracted_data()
-    education_new = education_new['degree']
-    if education_new is None:
-        education_new = []
-        education_patterns = [
-            r"Bachelor of Engineering",
-            r"\BE",
-            r"\B\.E"
-            r"Bachelor of Technology|",
-            r"\B\.Tech",
-            r"\BTech",
-            r"\B Tech"
-            r"Bachelor of Science|B\.Sc|BSc",
-        ]
-        education = []
-        for pattern in education_patterns:
-            matches = re.finditer(pattern, resume_text, re.IGNORECASE)
-            for match in matches:
-                education.append(match.group())
-        for c in education:
-            if c.lower() in ['Bachelor of Technology'.lower(),'Bachelor of Engineering'.lower(), 'B.Tech'.lower(), 'B Tech'.lower()]:
-                education_new.append(c)
-                break
-        for c in education:
-            if c.upper() in ['BE']:
-                education_new.append(c)
-                break
-        if len(education_new) == 0:
-            if 'BE(' in resume_text.replace(" ",'') or 'B.E' in resume_text.replace(' ', ''):
-                education_new.append("BE")
-    return ','.join(education_new) if education_new is not None else None
-
-
-def get_current_location(resume_text):
-    nlp = spacy.load('en_core_web_sm')
-    doc = nlp(resume_text)
-    tokens = [token.text for token in doc if not token.is_stop]
-    location = [r.lower().replace("\n", "") for r in open('./cities.txt', 'r', encoding="utf8").readlines()]
-    locations = []
-    for i in tokens:
-        if i.lower() in location:
-            locations.append(i)
-    for i in doc.noun_chunks:
-        i = i.text.lower().strip()
-        if i in location:
-            locations.append(i)
-    locations = list(set(locations) & set(location))
-    if len(locations) == 0:
-        locations = []
-        for w in resume_text.split():
-            if re.sub('[^A-Za-z]+', '', w.lower()) in location:
-                locations.append(re.sub('[^A-Za-z]+', '', w).replace("india", ''))
-    return ','.join([word.capitalize() for word in set([word.lower() for word in locations])])
-
-
-def extract_name(resume_text):
-    nlp = spacy.load('en_core_web_sm')
-    matcher = Matcher(nlp.vocab)
-    nlp_text = nlp(resume_text)
-    pattern = [{'POS': 'PROPN'}, {'POS': 'PROPN'}]
-    matcher.add('NAME', [pattern], on_match=None)
-    matches = matcher(nlp_text)
-    for match_id, start, end in matches:
-        span = nlp_text[start:end]
-        if span.text.lower() in [r.lower().replace("\n", "") for r in
-                                              open('./linkedin skill', 'r', encoding="utf8").readlines()]:
-            return re.sub(r'\d', '', get_email_addresses(resume_text).split('@')[0]).capitalize()
-        if '@' in span.text:
-            return span.text.replace(get_email_addresses(resume_text), '')
-        return span.text
-
-
-
-def get_skills(resume_text):
-    nlp = spacy.load('en_core_web_sm')
-    nlp_text = nlp(resume_text)
-    tokens = [token.text for token in nlp_text if not token.is_stop]
-    skills = [r.lower().replace("\n", "") for r in open('./linkedin skill', 'r', encoding="utf8").readlines()]
-    skillset = []
-    for i in tokens:
-        if i.lower() in skills:
-            skillset.append(i)
-    for i in nlp_text.noun_chunks:
-        i = i.text.lower().strip()
-        if i in skills:
-            skillset.append(i)
-
-    return ','.join([word.capitalize() for word in set([word.lower() for word in skillset])])
-
-
-def extract_certifications(resume_text):
-    pattern = r"(?i)(certifications|certification|certified)(.*?)\n"
-
-    # Use regular expression to find certification matches
-    certification_matches = re.findall(pattern, resume_text)
-
-    certifications = []
-    for match in certification_matches:
-        certifications.append(match[1].strip())
-
-    return ','.join(certifications) if len(certifications) != 0 else "No Certifications found"
-
-
-def get_exp(resume_text):
-    words_to_numbers = {
-        'one': '1',
-        'two': '2',
-        'three': '3',
-        'four': '4',
-        'five': '5',
-        'six': '6',
-        'seven': '7',
-        'eight': '8',
-        'nine': '9',
-        'zero': '0'
-    }
-    pattern = re.compile(r'\b(' + '|'.join(words_to_numbers.keys()) + r')\b')
-    nlp = spacy.load('en_core_web_sm')
-    doc = nlp(resume_text)
-    for ent in doc.ents:
-        if ent.label_ == "DATE" and "year" in ent.text.lower():
-            years_of_experience = ent.text
-            for y in years_of_experience.split():
-                if y.lower() in words_to_numbers.keys() or y.replace('+', '').isnumeric():
-                    years = f"{y.replace('+', '')}+"
-                    return re.sub(pattern, lambda x: words_to_numbers[x.group()], years)
-    for ent in doc.ents:
-        if ent.label_ == 'CARDINAL':
-            years_of_experience = ent.text
-            for y in years_of_experience.split():
-                if y.lower() in words_to_numbers.keys() or y.isnumeric():
-                    years = f'{y}+'
-                    return re.sub(pattern, lambda x: words_to_numbers[x.group()], years)
-    return None
-
-
-def get_details(resume_text, path):
-    extracted_text = {"Name": extract_name(resume_text),
-                      "E-Mail": get_email_addresses(resume_text),
-                      "Phone Number": get_phone_numbers(resume_text),
-                      'Skills': get_skills(resume_text),
-                      'Experience': get_exp(resume_text),
-                      'Education': get_education(path, resume_text),
-                      'Approx current location': get_current_location(resume_text),
-                      'certifications': extract_certifications(resume_text)
-                      }
-    return extracted_text
-
-
-def read_pdf(file):
-    save_path = Path('./', file.name)
-    with open(save_path, mode='wb') as w:
-        w.write(file.getvalue())
-    resume_data = open(f'./{file.name}', 'rb')
-    Script = PyPDF2.PdfReader(resume_data)
-    pages = len(Script.pages)
-    Script = []
-    with pdfplumber.open(resume_data) as pdf:
-        for i in range(0, pages):
-            page = pdf.pages[i]
-            text = page.extract_text()
-            Script.append(text)
-    Script = ''.join(Script)
-    resume_data = Script.replace("\n", " ")
-    return resume_data
-
-
-def read_docx(file):
-    my_text = docx2txt.process(file)
-    return my_text
-
-
-st.title("Resume and JD comparison")
-jd = st.text_input('please enter the job description below:')
-uploaded_resumes = st.file_uploader(
-    "Upload a resume (PDF or Docx)",
-    type=["pdf", "docx"],
-    accept_multiple_files=True
-)
-total_files = []
-for uploaded_resume in uploaded_resumes:
-    if uploaded_resume.type == "application/pdf":
-        resume_text = read_pdf(uploaded_resume)
-    else:
-        resume_text = read_docx(uploaded_resume)
-    resume_details = get_details(resume_text, uploaded_resume)
-    resume_details['Resume-Score'] = compare_jd(resume_text, jd)
-    resume_details['file-name'] = uploaded_resume.name
-    total_files.append(
-        resume_details
+def process_text(text):
+    # Split the text into chunks using Langchain's CharacterTextSplitter
+    text_splitter = CharacterTextSplitter(
+        separator="\n",
+        chunk_size=1000,
+        chunk_overlap=200,
+        length_function=len
     )
-if len(total_files) != 0:
-    df = pd.DataFrame(total_files)
-    df.index = np.arange(1, len(df) + 1)
-    df.index.names = ['sr_no']
-    res_df = st.dataframe(df)
-    df['Phone Number'] = '"' + df['Phone Number'] + '"'
-    st.download_button(
-        "Click to Download",
-        df.to_csv(),
-        "file.csv",
-        "text/csv",
-        key='download-csv'
-    )
+    chunks = text_splitter.split_text(text)
+
+    # Convert the chunks of text into embeddings to form a knowledge base
+    embeddings = OpenAIEmbeddings(openai_api_key=api_key)
+    knowledgeBase = FAISS.from_texts(chunks, embeddings)
+
+    return knowledgeBase
+
+
+def main():
+    st.title("Chat with your PDF 💬")
+
+    pdf = st.file_uploader('Upload your PDF Document', type=["pdf", "docx"])
+
+    if pdf is not None:
+        if pdf.type == 'pdf':
+            pdf_reader = PdfReader(pdf)
+            # Text variable will store the pdf text
+            text = ""
+            for page in pdf_reader.pages:
+                text += page.extract_text()
+        else:
+            text = docx2txt.process(pdf)
+        # Create the knowledge base object
+        knowledgeBase = process_text(text)
+
+        query = st.text_input('Ask a question to the PDF')
+        cancel_button = st.button('Cancel')
+
+        if cancel_button:
+            st.stop()
+
+        if query:
+            docs = knowledgeBase.similarity_search(query)
+
+            llm = OpenAI(openai_api_key=api_key)
+            chain = load_qa_chain(llm, chain_type='stuff')
+
+            with get_openai_callback() as cost:
+                response = chain.run(input_documents=docs, question=query)
+                print(cost)
+
+            st.write(response)
+
+
+if __name__ == "__main__":
+    main()
