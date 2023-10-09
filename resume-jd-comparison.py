@@ -35,7 +35,7 @@ knowledgeBase = ''
 
 
 def get_knowledge_base(text):
-    api_key = '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'
+    api_key = ''
     # Split the text into chunks using Langchain's CharacterTextSplitter
     text_splitter = CharacterTextSplitter(
         separator="\n",
@@ -52,7 +52,7 @@ def get_knowledge_base(text):
 
 
 def get_details_from_openai(text, query):
-    api_key = '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'
+    api_key = ''
     docs = knowledgeBase.similarity_search(query)
     llm = OpenAI(openai_api_key=api_key)
     chain = load_qa_chain(llm, chain_type='stuff')
