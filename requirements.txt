@@ -13,3 +13,4 @@ matplotlib
 langchain
 langsmith
 fsspec
+openai
