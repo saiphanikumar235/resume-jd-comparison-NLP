@@ -32,7 +32,7 @@ import time
 nltk.download('punkt')
 
 knowledgeBase = ''
-
+embeddings = OpenAIEmbeddings(openai_api_key=st.secrets['api_key'])
 
 def get_knowledge_base(text):
     api_key = st.secrets['api_key']
@@ -46,7 +46,7 @@ def get_knowledge_base(text):
     chunks = text_splitter.split_text(text)
 
     # Convert the chunks of text into embeddings to form a knowledge base
-    embeddings = OpenAIEmbeddings(openai_api_key=api_key)
+    
     global knowledgeBase
     knowledgeBase = FAISS.from_texts(chunks, embeddings)
 
@@ -269,3 +269,5 @@ if len(total_files) != 0:
         "text/csv",
         key='download-csv'
     )
+
+
