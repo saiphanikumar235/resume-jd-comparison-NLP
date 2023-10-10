@@ -117,11 +117,7 @@ def get_education(path, resume_text):
 
 def get_current_location(resume_text):
     res = get_details_from_openai(resume_text, 'what is the location of candiate')
-    res = res.replace('india', '').split()
-    r = [r.lower() for r in res if r in [
-        a.lower() for a in open('cities.txt', 'r').readlines()
-    ]]
-    return ','.join(r)
+    return res
 
 
 def extract_name(resume_text):
