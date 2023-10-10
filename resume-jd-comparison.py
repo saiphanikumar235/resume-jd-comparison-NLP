@@ -113,7 +113,7 @@ def get_education(path, resume_text):
         res = get_details_from_openai(resume_text, 'what are the educational details')
         return res
     else:
-        return re.sub('[^A-Za-z]+', '', ' '.join(education_new))
+        return re.sub('[^A-Za-z,]+', '', ','.join(education_new))
 
 
 def get_current_location(resume_text):
@@ -180,21 +180,21 @@ def get_exp(resume_text):
         if ent.label_ == "DATE" and ent.text.lower() in ["year", 'yrs']:
             years_of_experience = ent.text
             for y in years_of_experience.split():
-                if '.' in y and '+' in y:
+                if '.' in y:
                     return y
                 if y.lower() in words_to_numbers.keys() or y.replace('+', '').isnumeric():
                     years = f"{y.replace('+', '')}+"
                     return re.sub(pattern, lambda x: words_to_numbers[x.group()], years)
-    for ent in doc.ents:
-        if ent.label_ == 'CARDINAL':
-            years_of_experience = ent.text
-            for y in years_of_experience.split():
-                if '.' in y and '+' in y:
-                    return y.replace('++', '+')
-                if y.lower() in words_to_numbers.keys() or y.isnumeric():
-                    print(y)
-                    years = f'{y}+'
-                    return re.sub(pattern, lambda x: words_to_numbers[x.group()], years)
+    # for ent in doc.ents:
+    #     if ent.label_ == 'CARDINAL':
+    #         years_of_experience = ent.text
+    #         for y in years_of_experience.split():
+    #             if '.' in y and '+' in y:
+    #                 return y.replace('++', '+')
+    #             if y.lower() in words_to_numbers.keys() or y.isnumeric():
+    #                 print(y)
+    #                 years = f'{y}+'
+    #                 return re.sub(pattern, lambda x: words_to_numbers[x.group()], years)
     exp = get_details_from_openai(resume_text, 'what is number years of experience')
     return exp
 
@@ -261,7 +261,7 @@ if len(total_files) != 0:
     df.index = np.arange(1, len(df) + 1)
     df.index.names = ['S.No']
     res_df = st.dataframe(df)
-    df['Phone Number'] = '"' + df['Phone Number'] + '"'
+    df['Phone No'] = '"' + df['Phone No'] + '"'
     st.download_button(
         "Click to Download",
         df.to_csv(),
