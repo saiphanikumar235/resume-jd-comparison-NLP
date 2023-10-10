@@ -113,7 +113,7 @@ def get_education(path, resume_text):
         res = get_details_from_openai(resume_text, 'what are the educational details')
         return res
     else:
-        return education_new
+        return re.sub('[^A-Za-z]+', '', ' '.join(education_new))
 
 
 def get_current_location(resume_text):
@@ -180,7 +180,7 @@ def get_exp(resume_text):
         if ent.label_ == "DATE" and ent.text.lower() in ["year", 'yrs']:
             years_of_experience = ent.text
             for y in years_of_experience.split():
-                if '.' in y:
+                if '.' in y and '+' in y:
                     return y
                 if y.lower() in words_to_numbers.keys() or y.replace('+', '').isnumeric():
                     years = f"{y.replace('+', '')}+"
@@ -189,23 +189,24 @@ def get_exp(resume_text):
         if ent.label_ == 'CARDINAL':
             years_of_experience = ent.text
             for y in years_of_experience.split():
-                if '.' in y:
+                if '.' in y and '+' in y:
                     return y.replace('++', '+')
                 if y.lower() in words_to_numbers.keys() or y.isnumeric():
                     print(y)
                     years = f'{y}+'
                     return re.sub(pattern, lambda x: words_to_numbers[x.group()], years)
-    return None
+    exp = get_details_from_openai(resume_text, 'what is number years of experience')
+    return exp
 
 
 def get_details(resume_text, path):
     extracted_text = {"Name": extract_name(resume_text),
                       "E-Mail": get_email_addresses(resume_text),
-                      "Phone Number": get_phone_numbers(resume_text),
+                      "Phone No": get_phone_numbers(resume_text),
                       'Skills': get_skills(resume_text),
                       'Experience': get_exp(resume_text),
                       'Education': get_education(path, resume_text),
-                      'Approx current location': get_current_location(resume_text),
+                      'Approx Current Location': get_current_location(resume_text),
                       'certifications': extract_certifications(resume_text)
                       }
     return extracted_text
@@ -249,8 +250,8 @@ for uploaded_resume in uploaded_resumes:
         resume_text = read_docx(uploaded_resume)
     get_knowledge_base(resume_text)
     resume_details = get_details(resume_text, uploaded_resume)
-    resume_details['Resume-Score'] = compare_jd(resume_text, jd)
-    resume_details['file-name'] = uploaded_resume.name
+    resume_details['Resume Score'] = compare_jd(resume_text, jd)
+    resume_details['File Name'] = uploaded_resume.name
     total_files.append(
         resume_details
     )
@@ -258,7 +259,7 @@ for uploaded_resume in uploaded_resumes:
 if len(total_files) != 0:
     df = pd.DataFrame(total_files)
     df.index = np.arange(1, len(df) + 1)
-    df.index.names = ['sr_no']
+    df.index.names = ['S.No']
     res_df = st.dataframe(df)
     df['Phone Number'] = '"' + df['Phone Number'] + '"'
     st.download_button(
