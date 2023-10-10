@@ -109,6 +109,7 @@ def get_phone_numbers(string):
 def get_education(path, resume_text):
     education_new = ResumeParser(path).get_extracted_data()
     education_new = education_new['degree']
+    print(education_new)
     if education_new is None:
         res = get_details_from_openai(resume_text, 'what are the educational details')
         return res
