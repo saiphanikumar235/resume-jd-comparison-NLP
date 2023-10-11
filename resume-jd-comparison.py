@@ -32,6 +32,7 @@ import time
 nltk.download('punkt')
 
 knowledgeBase = ''
+embeddings = OpenAIEmbeddings(openai_api_key=st.secrets['api_key'])
 
 def get_knowledge_base(text):
     api_key = st.secrets['api_key']
@@ -45,7 +46,7 @@ def get_knowledge_base(text):
     chunks = text_splitter.split_text(text)
 
     # Convert the chunks of text into embeddings to form a knowledge base
-
+    
     global knowledgeBase
     knowledgeBase = FAISS.from_texts(chunks, embeddings)
 
@@ -241,7 +242,6 @@ uploaded_resumes = st.file_uploader(
     type=["pdf", "docx"],
     accept_multiple_files=True
 )
-embeddings = OpenAIEmbeddings(openai_api_key=st.secrets['api_key'])
 total_files = []
 for uploaded_resume in uploaded_resumes:
     if uploaded_resume.type == "application/pdf":
