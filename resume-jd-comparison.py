@@ -32,9 +32,13 @@ import time
 nltk.download('punkt')
 
 knowledgeBase = ''
-embeddings = OpenAIEmbeddings(openai_api_key=st.secrets['api_key'])
 
-def get_knowledge_base(text):
+
+def get_embeddings():
+    return OpenAIEmbeddings(openai_api_key=st.secrets['api_key'])
+
+
+def get_knowledge_base(text, embeddings):
     api_key = st.secrets['api_key']
     # Split the text into chunks using Langchain's CharacterTextSplitter
     text_splitter = CharacterTextSplitter(
@@ -46,7 +50,7 @@ def get_knowledge_base(text):
     chunks = text_splitter.split_text(text)
 
     # Convert the chunks of text into embeddings to form a knowledge base
-    
+
     global knowledgeBase
     knowledgeBase = FAISS.from_texts(chunks, embeddings)
 
@@ -243,12 +247,14 @@ uploaded_resumes = st.file_uploader(
     accept_multiple_files=True
 )
 total_files = []
-for uploaded_resume in uploaded_resumes:
+for index, uploaded_resume in enumerate(uploaded_resumes):
+    if index == 0:
+        emb = get_embeddings()
     if uploaded_resume.type == "application/pdf":
         resume_text = read_pdf(uploaded_resume)
     else:
         resume_text = read_docx(uploaded_resume)
-    get_knowledge_base(resume_text)
+    get_knowledge_base(resume_text, emb)
     resume_details = get_details(resume_text, uploaded_resume)
     resume_details['Resume Score'] = compare_jd(resume_text, jd)
     resume_details['File Name'] = uploaded_resume.name
@@ -269,5 +275,3 @@ if len(total_files) != 0:
         "text/csv",
         key='download-csv'
     )
-
-
