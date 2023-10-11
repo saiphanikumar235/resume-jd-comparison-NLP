@@ -32,10 +32,6 @@ import time
 nltk.download('punkt')
 
 knowledgeBase = ''
-i = 0 
-if i == 0:
-    embeddings = OpenAIEmbeddings(openai_api_key=st.secrets['api_key'])
-    i += 1
 
 def get_knowledge_base(text):
     api_key = st.secrets['api_key']
@@ -245,6 +241,7 @@ uploaded_resumes = st.file_uploader(
     type=["pdf", "docx"],
     accept_multiple_files=True
 )
+embeddings = OpenAIEmbeddings(openai_api_key=st.secrets['api_key'])
 total_files = []
 for uploaded_resume in uploaded_resumes:
     if uploaded_resume.type == "application/pdf":
