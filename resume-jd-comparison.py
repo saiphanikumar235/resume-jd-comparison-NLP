@@ -51,7 +51,7 @@ def get_knowledge_base(text):
 
     # Convert the chunks of text into embeddings to form a knowledge base
     global embeddings
-    if embeddings is not None:
+    if embeddings is None:
         i = 1
         print(f"{i}")
         i = i+1
