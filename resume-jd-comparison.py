@@ -62,7 +62,6 @@ def get_knowledge_base(text):
 
 def get_details_from_openai(text, query):
     api_key = st.secrets['api_key']
-    get_knowledge_base(text)
     docs = knowledgeBase.similarity_search(query)
     llm = OpenAI(openai_api_key=api_key)
     chain = load_qa_chain(llm, chain_type='stuff')
