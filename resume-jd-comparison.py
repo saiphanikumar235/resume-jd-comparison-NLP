@@ -5,6 +5,7 @@ import nltk
 
 nltk.download('stopwords')
 import pandas as pd
+import numpy as np
 import PyPDF2, pdfplumber, nlp, re, docx2txt, streamlit as st, nltk
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -34,11 +35,9 @@ nltk.download('punkt')
 knowledgeBase = ''
 
 
-def get_embeddings():
-    return OpenAIEmbeddings(openai_api_key=st.secrets['api_key'])
 
 
-def get_knowledge_base(text, embeddings):
+def get_knowledge_base(text):
     api_key = st.secrets['api_key']
     # Split the text into chunks using Langchain's CharacterTextSplitter
     text_splitter = CharacterTextSplitter(
@@ -50,7 +49,7 @@ def get_knowledge_base(text, embeddings):
     chunks = text_splitter.split_text(text)
 
     # Convert the chunks of text into embeddings to form a knowledge base
-
+    embeddings = np.load(r"./embedding.npy")
     global knowledgeBase
     knowledgeBase = FAISS.from_texts(chunks, embeddings)
 
@@ -248,13 +247,11 @@ uploaded_resumes = st.file_uploader(
 )
 total_files = []
 for index, uploaded_resume in enumerate(uploaded_resumes):
-    if index == 0:
-        emb = get_embeddings()
     if uploaded_resume.type == "application/pdf":
         resume_text = read_pdf(uploaded_resume)
     else:
         resume_text = read_docx(uploaded_resume)
-    get_knowledge_base(resume_text, emb)
+    get_knowledge_base(resume_text)
     resume_details = get_details(resume_text, uploaded_resume)
     resume_details['Resume Score'] = compare_jd(resume_text, jd)
     resume_details['File Name'] = uploaded_resume.name
