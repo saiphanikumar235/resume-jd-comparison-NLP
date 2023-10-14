@@ -55,7 +55,7 @@ def get_knowledge_base(text):
         i = 1
         print(f"{i}")
         i = i+1
-        embeddings = OpenAIEmbeddings(api_key=api_key)
+        embeddings = OpenAIEmbeddings(openai_api_key=api_key)
     global knowledgeBase
     knowledgeBase = FAISS.from_texts(chunks, embeddings)
 
