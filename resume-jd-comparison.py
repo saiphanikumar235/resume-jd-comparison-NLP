@@ -49,7 +49,7 @@ def get_knowledge_base(text):
     chunks = text_splitter.split_text(text)
 
     # Convert the chunks of text into embeddings to form a knowledge base
-    embeddings = np.load(r"./embedding.npy")
+    embeddings = np.load(r"./embedding.npy",allow_pickle=True)
     global knowledgeBase
     knowledgeBase = FAISS.from_texts(chunks, embeddings)
 
