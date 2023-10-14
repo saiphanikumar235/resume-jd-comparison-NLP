@@ -32,7 +32,8 @@ import time
 # os.system("python -m nltk.downloader stopwords")
 nltk.download('punkt')
 
-knowledgeBase = ''
+knowledgeBase = None
+embeddings = None
 
 
 
@@ -49,13 +50,19 @@ def get_knowledge_base(text):
     chunks = text_splitter.split_text(text)
 
     # Convert the chunks of text into embeddings to form a knowledge base
-    embeddings = np.load(r"./embedding.npy",allow_pickle=True)
+    global embeddings
+    if embeddings is not None:
+        i = 1
+        print(f"{i}")
+        i = i+1
+        embeddings = OpenAIEmbeddings(api_key=api_key)
     global knowledgeBase
     knowledgeBase = FAISS.from_texts(chunks, embeddings)
 
 
 def get_details_from_openai(text, query):
     api_key = st.secrets['api_key']
+    get_knowledge_base(text)
     docs = knowledgeBase.similarity_search(query)
     llm = OpenAI(openai_api_key=api_key)
     chain = load_qa_chain(llm, chain_type='stuff')
