@@ -118,17 +118,21 @@ def get_education(path, resume_text):
     education_new = education_new['degree']
     if education_new is None:
         res = get_details_from_openai(resume_text, 'what is the highest education degree give me in json format where key is degree')
-        res = json.loads(res)
-        return res['education']
+        if res.startswith('{'):
+            res = json.loads(res)
+            return res['education']
+        return None
     else:
         return re.sub('[^A-Za-z,]+', '', ','.join(education_new))
 
 
 def get_current_location(resume_text):
     res = get_details_from_openai(resume_text, 'what is the location of candiate give me in json format where key is location')
-    res = json.loads(res)
+    if res.startswith('{'):
+        res = json.loads(res)
     # st.write(res)
-    return res['location']
+        return res['location']
+    return None
 
 
 def extract_name(resume_text):
