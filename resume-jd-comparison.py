@@ -133,7 +133,7 @@ def get_education(path, resume_text):
         if res.startswith('{'):
             res = json.loads(res)
             st.write(res)
-            return res['education']
+            return res['degree']
         return None
     else:
         return ','.join(education_new)
