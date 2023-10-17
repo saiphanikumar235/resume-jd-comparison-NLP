@@ -245,7 +245,7 @@ def read_docx(file):
 
 
 st.title("Resume and JD comparison")
-jd = st.text_input('please enter the job description below:')
+# jd = st.text_input('please enter the job description below:')
 uploaded_resumes = st.file_uploader(
     "Upload a resume (PDF or Docx)",
     type=["pdf", "docx"],
@@ -259,7 +259,7 @@ for index, uploaded_resume in enumerate(uploaded_resumes):
         resume_text = read_docx(uploaded_resume)
     get_knowledge_base(resume_text)
     resume_details = get_details(resume_text, uploaded_resume)
-    resume_details['Resume Score'] = compare_jd(resume_text, jd)
+    # resume_details['Resume Score'] = compare_jd(resume_text, jd)
     resume_details['File Name'] = uploaded_resume.name
     total_files.append(
         resume_details
