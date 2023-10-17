@@ -102,7 +102,7 @@ def get_email_addresses(string):
 
 def get_phone_numbers(string):
     nlp = spacy.load("en_core_web_sm")
-    phone_number_pattern = r"(\+\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3,5}[-.\s]?\d{4}"
+    phone_number_pattern = r"(\+\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3,5}[-.\s]?\d{3,5}"
     doc = nlp(string)
     extracted_phone_numbers = []
     for match in re.finditer(phone_number_pattern, doc.text):
