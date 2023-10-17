@@ -205,8 +205,7 @@ def get_exp(resume_text):
     #                 print(y)
     #                 years = f'{y}+'
     #                 return re.sub(pattern, lambda x: words_to_numbers[x.group()], years)
-    exp = get_details_from_openai(resume_text, 'what is number years of experience just give me number only in json format where key is exp else give none as output')
-    exp = json.loads(exp)
+    exp = get_details_from_openai(resume_text, 'what is number years of experience just give me number only in json format where key is exp')
     return exp
 
 
