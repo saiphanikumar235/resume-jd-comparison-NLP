@@ -126,7 +126,7 @@ def get_education(path, resume_text):
 
 def get_current_location(resume_text):
     res = get_details_from_openai(resume_text, 'what is the location of candiate give me in json format where key is location')
-    res = json.dumps(res)['location']
+    res = json.loads(json.dumps(res))['location']
     return res
 
 
