@@ -167,8 +167,10 @@ def get_skills(resume_text):
 
 def extract_certifications(resume_text):
     r = get_details_from_openai(resume_text, 'what are the only certifications give me in json format where key is certifications')
-    r = json.loads(r)
-    return ','.join(r['certifications'])
+    if r.startswith("{"):
+        r = json.loads(r)
+        return ','.join(r['certifications'])
+    return None
 
 
 def get_exp(resume_text):
