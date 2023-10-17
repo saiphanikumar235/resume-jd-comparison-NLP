@@ -108,7 +108,17 @@ def get_phone_numbers(string):
     for match in re.finditer(phone_number_pattern, doc.text):
         extracted_phone_numbers.append(match.group())
     if len(extracted_phone_numbers) != 0:
-        return ','.join(extracted_phone_numbers) if len(extracted_phone_numbers) != 0 else None
+        return ','.join(extracted_phone_numbers)
+    phone_number_pattern = r"\+\d{2}-\d{5}-\d{5}"
+    for match in re.finditer(phone_number_pattern, doc.text):
+        extracted_phone_numbers.append(match.group())
+    if len(extracted_phone_numbers) != 0:
+        return ','.join(extracted_phone_numbers)
+    phone_number_pattern = r"\+\d{2}-\d{5} \d{5}"
+    for match in re.finditer(phone_number_pattern, doc.text):
+        extracted_phone_numbers.append(match.group())
+    if len(extracted_phone_numbers) != 0:
+        return ','.join(extracted_phone_numbers)
 
     # r = re.compile(r'(\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4})')
     # phone_numbers = r.findall(string)
