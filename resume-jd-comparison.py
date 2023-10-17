@@ -14,6 +14,7 @@ from spacy.matcher import Matcher
 from spacy.tokens import Span
 from nltk.corpus import stopwords
 from pathlib import Path
+import json
 from pyresparser import ResumeParser
 from gensim.models import Word2Vec
 from nltk.tokenize import word_tokenize
@@ -52,9 +53,6 @@ def get_knowledge_base(text):
     # Convert the chunks of text into embeddings to form a knowledge base
     global embeddings
     if embeddings is None:
-        i = 1
-        print(f"{i}")
-        i = i+1
         embeddings = OpenAIEmbeddings(openai_api_key=api_key)
     global knowledgeBase
     knowledgeBase = FAISS.from_texts(chunks, embeddings)
@@ -119,14 +117,16 @@ def get_education(path, resume_text):
     education_new = ResumeParser(path).get_extracted_data()
     education_new = education_new['degree']
     if education_new is None:
-        res = get_details_from_openai(resume_text, 'what are the educational details')
+        res = get_details_from_openai(resume_text, 'what is the highest education degree give me in json format where key is degree')
+        res = json.loads(res)['degree']
         return res
     else:
         return re.sub('[^A-Za-z,]+', '', ','.join(education_new))
 
 
 def get_current_location(resume_text):
-    res = get_details_from_openai(resume_text, 'what is the location of candiate')
+    res = get_details_from_openai(resume_text, 'what is the location of candiate give me in json format where key is location')
+    res = json.loads(res)['location']
     return res
 
 
@@ -165,8 +165,9 @@ def get_skills(resume_text):
 
 
 def extract_certifications(resume_text):
-    r = get_details_from_openai(resume_text, 'what are the certifications')
-    return r
+    r = get_details_from_openai(resume_text, 'what are the only certifications give me in json format where key is certifications')
+    r = json.load(r)['certifications']
+    return ','.join(r)
 
 
 def get_exp(resume_text):
@@ -204,7 +205,8 @@ def get_exp(resume_text):
     #                 print(y)
     #                 years = f'{y}+'
     #                 return re.sub(pattern, lambda x: words_to_numbers[x.group()], years)
-    exp = get_details_from_openai(resume_text, 'what is number years of experience')
+    exp = get_details_from_openai(resume_text, 'what is number years of experience just give me number only in json format where key is exp else give none as output')
+    exp = json.loads(exp)
     return exp
 
 
