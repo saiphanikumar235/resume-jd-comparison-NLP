@@ -206,7 +206,7 @@ def get_exp(resume_text):
     nlp = spacy.load('en_core_web_sm')
     doc = nlp(resume_text)
     for ent in doc.ents:
-        if ent.label_ == "DATE" and ent.text.lower() in ["year", 'yrs']:
+        if ent.label_ == "DATE" and ent.text.lower() in ["year", 'yrs', 'years']:
             years_of_experience = ent.text
             for y in years_of_experience.split():
                 if '.' in y:
