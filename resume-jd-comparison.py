@@ -125,7 +125,7 @@ def get_education(path, resume_text):
             return res['education']
         return None
     else:
-        return re.sub('[^A-Za-z,]+', '', ','.join(education_new))
+        return ','.join(education_new)
 
 
 def get_current_location(resume_text):
