@@ -63,7 +63,7 @@ def get_knowledge_base(text):
 def get_details_from_openai(text, query):
     api_key = st.secrets['api_key']
     docs = knowledgeBase.similarity_search(query)
-    llm = OpenAI(openai_api_key=api_key)
+    llm = OpenAI(openai_api_key=api_key, model_name="gpt-3.5-turbo")
     chain = load_qa_chain(llm, chain_type='stuff')
     response = chain.run(input_documents=docs, question=query)
     return response
