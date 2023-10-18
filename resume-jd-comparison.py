@@ -53,10 +53,9 @@ def get_knowledge_base(embeddings, text):
     knowledgeBase = FAISS.from_texts(chunks, embeddings)
 
 
-def get_details_from_openai(text, query):
+def get_details_from_openai(text, query, llm):
     api_key = st.secrets['api_key']
     docs = knowledgeBase.similarity_search(query)
-    llm = OpenAI(openai_api_key=api_key, model_name="gpt-3.5-turbo")
     chain = load_qa_chain(llm, chain_type='stuff')
     response = chain.run(input_documents=docs, question=query)
     return response
@@ -120,26 +119,30 @@ def get_phone_numbers(string):
     # return ','.join(list(set([re.sub(r'\D', '', num) for num in phone_numbers])))
 
 
-def get_education(path, resume_text):
+def get_education(path, resume_text, llm):
     education_new = ResumeParser(path).get_extracted_data()
     education_new = education_new['degree']
     if education_new is None:
         res = get_details_from_openai(resume_text,
-                                      'what is the highest education degree give me in json format where key is degree')
+                                      'what is the highest education degree give me in json format where key is degree',
+                                      llm)
         if res.startswith('{'):
             res = json.loads(res)
+            time.sleep(60)
             return res['degree']
         return None
     else:
         return ','.join(education_new)
 
 
-def get_current_location(resume_text):
+def get_current_location(resume_text, llm):
     res = get_details_from_openai(resume_text,
-                                  'what is the location of candiate give me in json format where key is location')
+                                  'what is the location of candiate give me in json format where key is location',
+                                  llm)
     if res.startswith('{'):
         res = json.loads(res)
         # st.write(res)
+        time.sleep(60)
         return res['location']
     return None
 
@@ -178,16 +181,17 @@ def get_skills(resume_text):
     return ','.join([word.capitalize() for word in set([word.lower() for word in skillset])])
 
 
-def extract_certifications(resume_text):
+def extract_certifications(resume_text, llm):
     r = get_details_from_openai(resume_text,
-                                'what are the only certifications give me in json format where key is certifications')
+                                'what are the only certifications give me in json format where key is certifications',
+                                llm)
     if r.startswith("{"):
         r = json.loads(r)
         return ','.join(r['certifications'])
     return None
 
 
-def get_exp(resume_text):
+def get_exp(resume_text, llm):
     words_to_numbers = {
         'one': '1',
         'two': '2',
@@ -223,20 +227,22 @@ def get_exp(resume_text):
     #                 years = f'{y}+'
     #                 return re.sub(pattern, lambda x: words_to_numbers[x.group()], years)
     exp = get_details_from_openai(resume_text,
-                                  'what is number years of experience just give me number only in json format where key is exp')
+                                  'what is number years of experience just give me number only in json format where key is exp',
+                                  llm)
     exp = [c for c in exp.split() if c.isdigit()]
+    time.sleep(60)
     return ','.join(exp) if len(exp) != 0 else None
 
 
-def get_details(resume_text, path):
+def get_details(resume_text, path, llm):
     extracted_text = {"Name": extract_name(resume_text),
                       "E-Mail": get_email_addresses(resume_text),
                       "Phone No": get_phone_numbers(resume_text),
                       'Skills': get_skills(resume_text),
-                      'Experience': get_exp(resume_text),
-                      'Education': get_education(path, resume_text),
-                      'Approx Current Location': get_current_location(resume_text),
-                      'certifications': extract_certifications(resume_text)
+                      'Experience': get_exp(resume_text, llm),
+                      'Education': get_education(path, resume_text, llm),
+                      'Approx Current Location': get_current_location(resume_text, llm),
+                      'certifications': extract_certifications(resume_text, llm)
                       }
     return extracted_text
 
@@ -274,13 +280,14 @@ uploaded_resumes = st.file_uploader(
 total_files = []
 
 
-@st.cache_resource
+@st.experimental_singleton
 def get_embeddings():
-    st.write('Hi')
-    return OpenAIEmbeddings(openai_api_key=st.secrets['api_key'])
+    llm = OpenAI(openai_api_key=st.secrets['api_key'], model_name="gpt-3.5-turbo")
+    embeddings = OpenAIEmbeddings(openai_api_key=st.secrets['api_key'])
+    return embeddings, llm
 
 
-embeddings = get_embeddings()
+embeddings, llm = get_embeddings()
 
 for index, uploaded_resume in enumerate(uploaded_resumes):
     if uploaded_resume.type == "application/pdf":
@@ -288,7 +295,7 @@ for index, uploaded_resume in enumerate(uploaded_resumes):
     else:
         resume_text = read_docx(uploaded_resume)
     get_knowledge_base(embeddings, resume_text)
-    resume_details = get_details(resume_text, uploaded_resume)
+    resume_details = get_details(resume_text, uploaded_resume, llm)
     # resume_details['Resume Score'] = compare_jd(resume_text, jd)
     resume_details['File Name'] = uploaded_resume.name
     total_files.append(
