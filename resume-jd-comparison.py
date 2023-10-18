@@ -276,7 +276,7 @@ total_files = []
 
 @st.cache_resource
 def get_embeddings():
-    print('Hi')
+    st.write('Hi')
     return OpenAIEmbeddings(openai_api_key=st.secrets['api_key'])
 
 
