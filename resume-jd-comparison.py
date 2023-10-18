@@ -274,7 +274,7 @@ uploaded_resumes = st.file_uploader(
 total_files = []
 
 
-@st.experimental_singleton
+@st.cache_resource
 def get_embeddings():
     print('Hi')
     return OpenAIEmbeddings(openai_api_key=st.secrets['api_key'])
