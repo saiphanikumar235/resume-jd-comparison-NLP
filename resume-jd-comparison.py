@@ -34,12 +34,9 @@ import time
 nltk.download('punkt')
 
 knowledgeBase = None
-embeddings = None
 
 
-
-
-def get_knowledge_base(text):
+def get_knowledge_base(embeddings, text):
     api_key = st.secrets['api_key']
     # Split the text into chunks using Langchain's CharacterTextSplitter
     text_splitter = CharacterTextSplitter(
@@ -51,9 +48,7 @@ def get_knowledge_base(text):
     chunks = text_splitter.split_text(text)
 
     # Convert the chunks of text into embeddings to form a knowledge base
-    global embeddings
-    if embeddings is None:
-        embeddings = OpenAIEmbeddings(openai_api_key=api_key)
+    # embeddings = OpenAIEmbeddings(openai_api_key=api_key)
     global knowledgeBase
     knowledgeBase = FAISS.from_texts(chunks, embeddings)
 
@@ -129,7 +124,8 @@ def get_education(path, resume_text):
     education_new = ResumeParser(path).get_extracted_data()
     education_new = education_new['degree']
     if education_new is None:
-        res = get_details_from_openai(resume_text, 'what is the highest education degree give me in json format where key is degree')
+        res = get_details_from_openai(resume_text,
+                                      'what is the highest education degree give me in json format where key is degree')
         if res.startswith('{'):
             res = json.loads(res)
             return res['degree']
@@ -139,10 +135,11 @@ def get_education(path, resume_text):
 
 
 def get_current_location(resume_text):
-    res = get_details_from_openai(resume_text, 'what is the location of candiate give me in json format where key is location')
+    res = get_details_from_openai(resume_text,
+                                  'what is the location of candiate give me in json format where key is location')
     if res.startswith('{'):
         res = json.loads(res)
-    # st.write(res)
+        # st.write(res)
         return res['location']
     return None
 
@@ -182,7 +179,8 @@ def get_skills(resume_text):
 
 
 def extract_certifications(resume_text):
-    r = get_details_from_openai(resume_text, 'what are the only certifications give me in json format where key is certifications')
+    r = get_details_from_openai(resume_text,
+                                'what are the only certifications give me in json format where key is certifications')
     if r.startswith("{"):
         r = json.loads(r)
         return ','.join(r['certifications'])
@@ -224,7 +222,8 @@ def get_exp(resume_text):
     #                 print(y)
     #                 years = f'{y}+'
     #                 return re.sub(pattern, lambda x: words_to_numbers[x.group()], years)
-    exp = get_details_from_openai(resume_text, 'what is number years of experience just give me number only in json format where key is exp')
+    exp = get_details_from_openai(resume_text,
+                                  'what is number years of experience just give me number only in json format where key is exp')
     exp = [c for c in exp.split() if c.isdigit()]
     return ','.join(exp) if len(exp) != 0 else None
 
@@ -273,12 +272,22 @@ uploaded_resumes = st.file_uploader(
     accept_multiple_files=True
 )
 total_files = []
+
+
+@st.experimental_singleton
+def get_embeddings():
+    print('Hi')
+    return OpenAIEmbeddings(openai_api_key=st.secrets['api_key'])
+
+
+embeddings = get_embeddings()
+
 for index, uploaded_resume in enumerate(uploaded_resumes):
     if uploaded_resume.type == "application/pdf":
         resume_text = read_pdf(uploaded_resume)
     else:
         resume_text = read_docx(uploaded_resume)
-    get_knowledge_base(resume_text)
+    get_knowledge_base(embeddings, resume_text)
     resume_details = get_details(resume_text, uploaded_resume)
     # resume_details['Resume Score'] = compare_jd(resume_text, jd)
     resume_details['File Name'] = uploaded_resume.name
